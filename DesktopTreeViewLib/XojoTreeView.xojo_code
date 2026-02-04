@@ -176,23 +176,14 @@ Inherits DesktopCanvas
 	#tag Method, Flags = &h21
 		Private Function AttributeColor(node As Dictionary) As Color
 		  ' Optional controller-set indicator.
-		  ' Robust to key-typing differences (String/Text/etc) by scanning keys.
-		  '
 		  ' node.Value("_Attribute") may be:
 		  '   String-ish: "green" | "yellow" | "red" (also ok/warn/error)
 		  '   Numeric-ish: 1 | 2 | 3
-		  If node = Nil Then Return Color.RGBA(0, 0, 0, 0)
-		
-		  Var keyAttr As Variant = Nil
-		  For Each k As Variant In node.Keys
-		    If k.StringValue = "_Attribute" Then
-		      keyAttr = k
-		      Exit
-		    End If
-		  Next
-		  If keyAttr Is Nil Then Return Color.RGBA(0, 0, 0, 0)
-		
-		  Var v As Variant = node.Value(keyAttr)
+		  If node = Nil Or Not node.HasKey("_Attribute") Then
+		    Return Color.RGBA(0, 0, 0, 0)
+		  End If
+		  
+		  Var v As Variant = node.Value("_Attribute")
 		  Try
 		    ' Prefer string interpretation (works for String/Text/anything with StringValue)
 		    Var s As String = v.StringValue.Trim.Lowercase
@@ -204,7 +195,7 @@ Inherits DesktopCanvas
 		    Case "red", "bad", "error"
 		      Return Color.RGB(235, 95, 95)
 		    End Select
-		
+		    
 		    ' Fallback: numeric code
 		    Var n As Integer = v.IntegerValue
 		    Select Case n
