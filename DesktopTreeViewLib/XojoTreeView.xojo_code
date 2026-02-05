@@ -81,6 +81,19 @@ Inherits DesktopCanvas
 		    
 		    Var row As Dictionary = mRows(i)
 		    Var node As Dictionary = Dictionary(row.Value("Node"))
+		    
+		    Var isSelected As Boolean = node.Lookup("_Selected", False).BooleanValue
+		    If isSelected Then
+		      // Fill highlight (deep purple-ish, dark-mode friendly)
+		      g.DrawingColor = Color.RGB(60, 45, 85)
+		      g.FillRectangle(0, y, Self.Width, mRowH)
+		      
+		      // Optional border to make it pop
+		      g.DrawingColor = Color.RGB(120, 80, 200)
+		      g.DrawRectangle(0, y, Self.Width, mRowH)
+		    End If
+		    
+		    
 		    Var depth As Integer = row.Value("Depth").IntegerValue
 		    
 		    ' Dotted guide columns (brighter)
@@ -139,9 +152,9 @@ Inherits DesktopCanvas
 		      Var starX As Integer = Self.Width - 12
 		      Var starY As Integer = y + (mRowH \ 2)
 		      
-		      g.DrawingOpacity = 0.65
+		      //g.DrawingOpacity = 0.65
 		      DrawStar(g, starX, starY, sr, ac)
-		      g.DrawingOpacity = 1.0
+		      //g.DrawingOpacity = 1.0
 		    End If
 		    
 		  Next
@@ -169,42 +182,44 @@ Inherits DesktopCanvas
 
 	#tag Method, Flags = &h21
 		Private Function AttributeColor(node As Dictionary) As Color
-		  ' VISUAL color only. Visibility is handled in Paint by checking "_Attribute".
+		  Var bg As Color = Color.RGB(30, 30, 34) // your canvas background
+		  
 		  If node = Nil Or Not node.HasKey("_Attribute") Then
-		    Return Color.RGB(180, 180, 180) // fallback (normally unused)
+		    Return Blend(Color.RGB(180,180,180), bg, 0.35)
 		  End If
 		  
 		  Var v As Variant = node.Value("_Attribute")
 		  
-		  ' Try string mapping first
+		  Var base As Color = Color.RGB(180, 180, 180)
+		  
 		  Try
 		    Var s As String = v.StringValue.Trim.Lowercase
 		    Select Case s
 		    Case "green", "ok", "good"
-		      Return Color.RGB(80, 200, 120)
+		      base = Color.RGB(80, 200, 120)
 		    Case "yellow", "warn", "warning"
-		      Return Color.RGB(240, 210, 90)
+		      base = Color.RGB(240, 210, 90)
 		    Case "red", "bad", "error"
-		      Return Color.RGB(235, 95, 95)
+		      base = Color.RGB(235, 95, 95)
 		    End Select
 		  Catch
 		  End Try
 		  
-		  ' Then numeric mapping
 		  Try
 		    Var n As Integer = v.IntegerValue
 		    Select Case n
 		    Case 1
-		      Return Color.RGB(80, 200, 120)
+		      base = Color.RGB(80, 200, 120)
 		    Case 2
-		      Return Color.RGB(240, 210, 90)
+		      base = Color.RGB(240, 210, 90)
 		    Case 3
-		      Return Color.RGB(235, 95, 95)
+		      base = Color.RGB(235, 95, 95)
 		    End Select
 		  Catch
 		  End Try
 		  
-		  Return Color.RGB(180, 180, 180)
+		  // “fake alpha” by blending into background
+		  Return Blend(base, bg, 0.65)
 		End Function
 	#tag EndMethod
 
@@ -215,6 +230,15 @@ Inherits DesktopCanvas
 		  Self.LevelSpec = levelSpec
 		  Update
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function Blend(over As Color, back As Color, a As Double) As Color
+		  Var r As Integer = back.Red   + (over.Red   - back.Red)   * a
+		  Var gg As Integer = back.Green + (over.Green - back.Green) * a
+		  Var b As Integer = back.Blue  + (over.Blue  - back.Blue)  * a
+		  Return Color.RGB(r, gg, b)
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
