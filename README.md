@@ -1,5 +1,8 @@
 # XojoTreeView (Canvas-based)
 
+<img width="602" height="632" alt="image" src="https://github.com/user-attachments/assets/30cedcc4-9ba6-470c-8797-06b027aa2af8" />
+
+
 A lightweight, modern **TreeView implemented on top of `Canvas`**, built to explore and validate **Xojo’s new Library feature** while producing something genuinely useful for real projects.
 
 This TreeView is:
