@@ -386,11 +386,6 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 
-	#tag Hook, Flags = &h0
-		Event test()
-	#tag EndHook
-
-
 	#tag Property, Flags = &h0
 		LevelSpec As Dictionary
 	#tag EndProperty
