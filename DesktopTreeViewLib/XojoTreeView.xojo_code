@@ -126,30 +126,24 @@ Inherits DesktopCanvas
 		      x = x + icon.Width + 6
 		      g.DrawingColor = textCol
 		      g.DrawText(valueText, x, y + mRowH - 6)
-		      
-		      ' Right-justified attribute indicator (optional)
-		      Var ac As Color = AttributeColor(node)
-		      If ac.Alpha <> 0 Then
-		        Var sr As Integer = 6
-		        Var starX As Integer = Self.Width - 12
-		        Var starY As Integer = y + (mRowH \ 2)
-		        DrawStar(g, starX, starY, sr, ac)
-		      End If
-		      
 		    Else
 		      g.DrawingColor = textCol
 		      g.DrawText(caption + " " + valueText, x, y + mRowH - 6)
-		      
-		      ' Right-justified attribute indicator (optional)
-		      Var ac As Color = AttributeColor(node)
-		      If ac.Alpha <> 0 Then
-		        Var sr As Integer = 6
-		        Var starX As Integer = Self.Width - 12
-		        Var starY As Integer = y + (mRowH \ 2)
-		        DrawStar(g, starX, starY, sr, ac)
-		      End If
-		      
 		    End If
+		    
+		    ' Right-justified attribute indicator (optional)
+		    ' NEW: flag is presence of "_Attribute", not alpha
+		    If node <> Nil And node.HasKey("_Attribute") Then
+		      Var ac As Color = AttributeColor(node)
+		      Var sr As Integer = 6
+		      Var starX As Integer = Self.Width - 12
+		      Var starY As Integer = y + (mRowH \ 2)
+		      
+		      g.DrawingOpacity = 0.65
+		      DrawStar(g, starX, starY, sr, ac)
+		      g.DrawingOpacity = 1.0
+		    End If
+		    
 		  Next
 		End Sub
 	#tag EndEvent
@@ -175,17 +169,15 @@ Inherits DesktopCanvas
 
 	#tag Method, Flags = &h21
 		Private Function AttributeColor(node As Dictionary) As Color
-		  ' Optional controller-set indicator.
-		  ' node.Value("_Attribute") may be:
-		  '   String-ish: "green" | "yellow" | "red" (also ok/warn/error)
-		  '   Numeric-ish: 1 | 2 | 3
+		  ' VISUAL color only. Visibility is handled in Paint by checking "_Attribute".
 		  If node = Nil Or Not node.HasKey("_Attribute") Then
-		    Return Color.RGBA(0, 0, 0, 0)
+		    Return Color.RGB(180, 180, 180) // fallback (normally unused)
 		  End If
 		  
 		  Var v As Variant = node.Value("_Attribute")
+		  
+		  ' Try string mapping first
 		  Try
-		    ' Prefer string interpretation (works for String/Text/anything with StringValue)
 		    Var s As String = v.StringValue.Trim.Lowercase
 		    Select Case s
 		    Case "green", "ok", "good"
@@ -195,8 +187,11 @@ Inherits DesktopCanvas
 		    Case "red", "bad", "error"
 		      Return Color.RGB(235, 95, 95)
 		    End Select
-		    
-		    ' Fallback: numeric code
+		  Catch
+		  End Try
+		  
+		  ' Then numeric mapping
+		  Try
 		    Var n As Integer = v.IntegerValue
 		    Select Case n
 		    Case 1
@@ -205,12 +200,11 @@ Inherits DesktopCanvas
 		      Return Color.RGB(240, 210, 90)
 		    Case 3
 		      Return Color.RGB(235, 95, 95)
-		    Else
-		      Return Color.RGBA(0, 0, 0, 0)
 		    End Select
 		  Catch
-		    Return Color.RGBA(0, 0, 0, 0)
 		  End Try
+		  
+		  Return Color.RGB(180, 180, 180)
 		End Function
 	#tag EndMethod
 
@@ -366,6 +360,11 @@ Inherits DesktopCanvas
 		  Refresh
 		End Sub
 	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0
+		Event test()
+	#tag EndHook
 
 
 	#tag Property, Flags = &h0

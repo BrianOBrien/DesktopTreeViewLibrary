@@ -43,6 +43,7 @@ Begin DesktopWindow Window1
       mIndent         =   18
       mNeedsRebuild   =   True
       mRowH           =   22
+      mScrollY        =   0
       mTriangleSize   =   10
       Scope           =   0
       TabIndex        =   0
@@ -361,14 +362,6 @@ End
 		Group="Deprecated"
 		InitialValue="False"
 		Type="Boolean"
-		EditorType=""
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="theTree"
-		Visible=false
-		Group="Behavior"
-		InitialValue=""
-		Type="Integer"
 		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

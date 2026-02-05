@@ -1,40 +1,55 @@
-XojoTreeView v14
+# XojoTreeView (Canvas-based)
 
-This version introduces a LevelSpec abstraction.
+A lightweight, modern **TreeView implemented on top of `Canvas`**, built to explore and validate **Xojo’s new Library feature** while producing something genuinely useful for real projects.
 
-BeginUse signature:
-  BeginUse(tree As Dictionary, callback As TreeViewCallback, levelSpec As Dictionary)
+This TreeView is:
+- Dark-theme friendly
+- Dictionary-driven
+- Fully custom-drawn
+- Independent of `DesktopTreeView` limitations
 
-Each node dictionary uses:
-  _Type   : String   (e.g. Library, Artist, Album, Track, Patient, Study, Series, Instance)
-  Value   : String   (display text)
-  Children: Dictionary (optional)
+It is suitable for use in Desktop projects where you want **full visual control** and **predictable behavior**.
 
-LevelSpec format:
-  key   = _Type string
-  value = Dictionary with:
-            Caption : String
-            Icon    : Picture
+---
 
-Import order:
-  1) XojoTreeViewDelegates.xojo_code
-  2) XojoTreeView.xojo_code
-  3) XojoTreeViewSampleData.xojo_code
+## Features
 
+- Canvas-based rendering (no DesktopTreeView)
+- Hierarchical data driven by `Dictionary`
+- Expand / collapse support
+- Custom disclosure triangles
+- Optional icons per node type
+- Attribute indicators (e.g. star markers)
+- Clean separation of:
+  - model (dictionary)
+  - layout
+  - rendering
+- Designed for dark themes
+- No reliance on `Color.Alpha` for state
 
-v15: Increased dotted guide line contrast and restored disclosure triangle drawing in Paint.
+---
 
+## Why Canvas?
 
-v18: Adds AttributeColor and DrawStar methods (star polygon 0,2,4,1,3) and Paint integration. Fixes DrawTriangle integer division.
+Xojo’s built-in TreeView is convenient, but:
+- styling is limited
+- behavior can be opaque
+- extending it can be frustrating
 
+This approach trades convenience for **clarity and control**:
+everything you see is drawn intentionally.
 
-v19: SampleData restored to a large scrolling dataset; sets _Attribute="green" on first track of each album.
+---
 
+## Data Model
 
-v20: Adds horizontal dotted elbow connectors (DrawDottedH) for classic tree look.
+Nodes are simple `Dictionary` objects.  
+Common keys include:
 
-
-v21: Restores interaction events (MouseDown selection/expand, MouseWheel scrolling) and selected-row highlight.
-
-
-v22: Fix star visibility by making AttributeColor robust for String/Text Variants (uses StringValue first, then IntegerValue fallback).
+```text
+_Key
+_Value
+_Type
+_Expanded (Boolean)
+_Attribute (optional)
+Children (Dictionary)
