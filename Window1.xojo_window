@@ -79,8 +79,6 @@ End
 		  // --------------------------------
 		  // Activate tree view
 		  // --------------------------------
-		  //TreeViewControl.SetLevelSpec(levelSpec)
-		  //TreeViewControl.SetTree(theTree)
 		  
 		  TreeViewControl.BeginUse(theTree, levelSpec)
 		  

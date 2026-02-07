@@ -91,6 +91,7 @@ End
 		Sub Opening()
 		  LayoutControls
 		  XTree1.BeginUse(mTree, mLevelSpec, Self) ' sets mHost
+		  SyncScrollBar
 		  
 		End Sub
 	#tag EndEvent
@@ -98,6 +99,7 @@ End
 	#tag Event
 		Sub Resized()
 		  LayoutControls
+		  SyncScrollBar
 		End Sub
 	#tag EndEvent
 
@@ -112,7 +114,10 @@ End
 		  XTree1.Update
 		  
 		  ' reset scroll to top
+		  ' reset scroll to top
+		  mScrollSync = True
 		  VScroll.Value = 0
+		  mScrollSync = False
 		  XTree1.SetScrollY(0)
 		End Sub
 	#tag EndMethod
@@ -132,6 +137,27 @@ End
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub SyncScrollBar()
+		  If XTree1 Is Nil Then Return
+		  
+		  mScrollSync = True
+		  
+		  vScroll.MinimumValue = 0
+		  vScroll.MaximumValue = XTree1.MaxScrollY
+		  vScroll.PageStep = XTree1.Height   ' pixel scrolling
+		  
+		  ' Clamp current scroll into legal range
+		  Var v As Integer = vScroll.Value
+		  If v < 0 Then v = 0
+		  If v > vScroll.MaximumValue Then v = vScroll.MaximumValue
+		  vScroll.Value = v
+		  mScrollY = v
+		  
+		  mScrollSync = False
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub TreeViewCallback(EventName As String, node As Dictionary, nodeKey As String)
 		  //System.DebugLog("TreeViewCallback control level")
@@ -139,11 +165,19 @@ End
 		  Case "NodeSelected"
 		    RaiseEvent SelectionChanged(node, nodeKey)
 		  Case "ScrollChanged"
-		    ' keep scrollbar synced
-		    If VScroll.Value <> Integer.FromString(nodeKey) Then
-		      VScroll.Value = Integer.FromString(nodeKey)
-		    End If
+		    ' IMPORTANT: update range FIRST, then set value without feedback loop
+		    SyncScrollBar
 		    
+		    Var newV As Integer = Integer.FromString(nodeKey)
+		    If newV < 0 Then newV = 0
+		    If newV > VScroll.MaximumValue Then newV = VScroll.MaximumValue
+		    
+		    If VScroll.Value <> newV Then
+		      mScrollSync = True
+		      VScroll.Value = newV
+		      mScrollY = newV
+		      mScrollSync = False
+		    end if
 		  End Select
 		End Sub
 	#tag EndMethod
@@ -162,6 +196,10 @@ End
 		mLevelSpec As Dictionary
 	#tag EndProperty
 
+	#tag Property, Flags = &h21
+		Private mScrollSync As Boolean
+	#tag EndProperty
+
 	#tag Property, Flags = &h0
 		mScrollY As Integer = 0
 	#tag EndProperty
@@ -176,6 +214,7 @@ End
 #tag Events vScroll
 	#tag Event
 		Sub ValueChanged()
+		  If mScrollSync Then Return
 		  mScrollY = VScroll.Value
 		  XTree1.SetScrollY(mScrollY)
 		End Sub

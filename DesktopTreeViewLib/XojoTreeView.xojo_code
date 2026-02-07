@@ -23,8 +23,15 @@ Inherits DesktopCanvas
 		    If x >= triX And x <= (triX + mTriangleSize) And y >= triY And y <= (triY + mTriangleSize) Then
 		      node.Value("_Expanded") = Not node.Value("_Expanded").BooleanValue
 		      mNeedsRebuild = True
+		      
+		      ' Rebuild immediately so scroll range is correct right now
+		      RebuildRows
+		      ClampScroll
 		      Refresh
-		      Return True ' expanding/collapsing does not fire selection callback
+		      
+		      ' Notify host/container so scrollbar range/value stays valid
+		      Fire("ScrollChanged", Nil, mScrollY.ToString)
+		      
 		    End If
 		  End If
 		  
@@ -44,7 +51,7 @@ Inherits DesktopCanvas
 		  #Pragma Unused deltaX
 		  
 		  ' deltaY is typically +/-1 per notch; scale for pleasant scrolling
-		  mScrollY = mScrollY - (deltaY * (mRowH \ 2))
+		  mScrollY = mScrollY - (-deltaY * (mRowH \ 2))
 		  ClampScroll
 		  Refresh
 		  
@@ -254,7 +261,13 @@ Inherits DesktopCanvas
 
 	#tag Method, Flags = &h21
 		Private Sub ClampScroll()
-		  Var maxScroll As Integer = TotalContentHeight - Self.Height
+		  ' IMPORTANT:
+		  ' When nodes expand/collapse, mNeedsRebuild becomes True.
+		  ' Scrolling must rebuild rows BEFORE computing TotalContentHeight.
+		  If mNeedsRebuild Then RebuildRows
+		  
+		  Var maxScroll As Integer = (mRows.Count * mRowH) - Self.Height
+		  
 		  If maxScroll < 0 Then maxScroll = 0
 		  If mScrollY < 0 Then mScrollY = 0
 		  If mScrollY > maxScroll Then mScrollY = maxScroll
@@ -359,12 +372,23 @@ Inherits DesktopCanvas
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
-		Private Sub Fire(EventName As String, node As Dictionary, nodeKey As String)
+	#tag Method, Flags = &h1
+		Protected Sub Fire(EventName As String, node As Dictionary, nodeKey As String)
 		  If mHost <> Nil Then
 		    mHost.TreeViewCallback(EventName, node, nodeKey)
 		  End If
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function MaxScrollY() As Integer
+		  ' Ensure rows list is current BEFORE computing height
+		  If mNeedsRebuild Then RebuildRows
+		  
+		  Var maxScroll As Integer = (mRows.Count * mRowH) - Self.Height
+		  If maxScroll < 0 Then maxScroll = 0
+		  Return maxScroll
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
@@ -377,30 +401,11 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub SetLevelSpec(levelSpec as Dictionary)
-		  Self.mLevelSpec = levelSpec
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub SetScrollY(y As Integer)
 		  mScrollY = y
 		  ClampScroll
 		  Refresh
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub SetTree(theTree as Dictionary)
-		  mRoot = theTree
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Function TotalContentHeight() As Integer
-		  Return mRows.Count * mRowH
-		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -416,36 +421,36 @@ Inherits DesktopCanvas
 		Private mHost As ITreeHost
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mIndent As Integer = 18
+	#tag Property, Flags = &h21
+		Private mIndent As Integer = 18
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mLevelSpec As Dictionary
+	#tag Property, Flags = &h21
+		Private mLevelSpec As Dictionary
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mNeedsRebuild As Boolean = True
+	#tag Property, Flags = &h21
+		Private mNeedsRebuild As Boolean = True
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Private mRoot As Dictionary
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mRowH As Integer = 22
+	#tag Property, Flags = &h21
+		Private mRowH As Integer = 22
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mRows() As Dictionary
+	#tag Property, Flags = &h21
+		Private mRows() As Dictionary
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mScrollY As Integer = 0
+	#tag Property, Flags = &h21
+		Private mScrollY As Integer = 0
 	#tag EndProperty
 
-	#tag Property, Flags = &h0
-		mTriangleSize As Integer = 10
+	#tag Property, Flags = &h21
+		Private mTriangleSize As Integer = 10
 	#tag EndProperty
 
 
@@ -631,46 +636,6 @@ Inherits DesktopCanvas
 			Visible=true
 			Group="Behavior"
 			InitialValue="False"
-			Type="Boolean"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mRowH"
-			Visible=false
-			Group="Behavior"
-			InitialValue="22"
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mIndent"
-			Visible=false
-			Group="Behavior"
-			InitialValue="18"
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mTriangleSize"
-			Visible=false
-			Group="Behavior"
-			InitialValue="10"
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mScrollY"
-			Visible=false
-			Group="Behavior"
-			InitialValue="0"
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="mNeedsRebuild"
-			Visible=false
-			Group="Behavior"
-			InitialValue="True"
 			Type="Boolean"
 			EditorType=""
 		#tag EndViewProperty
