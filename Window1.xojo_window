@@ -25,28 +25,28 @@ Begin DesktopWindow Window1
    Type            =   0
    Visible         =   True
    Width           =   600
-   Begin XojoTreeView TreeView1
+   Begin DesktopTreeViewCntrl TreeViewControl
       AllowAutoDeactivate=   True
       AllowFocus      =   False
-      AllowFocusRing  =   True
-      AllowTabs       =   False
+      AllowFocusRing  =   False
+      AllowTabs       =   True
       Backdrop        =   0
+      BackgroundColor =   &cFFFFFF
+      Composited      =   False
       Enabled         =   True
+      HasBackgroundColor=   False
       Height          =   360
       Index           =   -2147483648
+      InitialParent   =   ""
       Left            =   20
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
-      mIndent         =   18
-      mNeedsRebuild   =   True
-      mRowH           =   22
       mScrollY        =   0
-      mTriangleSize   =   10
       Scope           =   0
-      TabIndex        =   0
+      TabIndex        =   1
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
@@ -66,51 +66,26 @@ End
 		  // --------------------------------
 		  Var levelSpec As New Dictionary
 		  
-		  levelSpec.Value("Library") = New Dictionary( _
-		  "Caption":"Library", _
-		  "Icon":Icon_Library _
-		  )
-		  
-		  levelSpec.Value("Artist") = New Dictionary( _
-		  "Caption":"Artists", _
-		  "Icon":Icon_Artist _
-		  )
-		  
-		  levelSpec.Value("Album") = New Dictionary( _
-		  "Caption":"Albums", _
-		  "Icon":Icon_Album _
-		  )
-		  
-		  levelSpec.Value("Track") = New Dictionary( _
-		  "Caption":"Tracks", _
-		  "Icon":Icon_Song _
-		  )
+		  levelSpec.Value("Library") = New Dictionary("Caption":"Library", "Icon":Icon_Library )
+		  levelSpec.Value("Artist") = New Dictionary("Caption":"Artists", "Icon":Icon_Artist )
+		  levelSpec.Value("Album") = New Dictionary("Caption":"Albums", "Icon":Icon_Album )
+		  levelSpec.Value("Track") = New Dictionary("Caption":"Tracks","Icon":Icon_Song )
 		  
 		  // --------------------------------
 		  // Build sample tree (includes stars)
 		  // --------------------------------
-		  Var tree As Dictionary
 		  theTree = XojoTreeViewSampleData.BuildMusicSample
 		  
 		  // --------------------------------
 		  // Activate tree view
 		  // --------------------------------
-		  TreeView1.BeginUse(theTree, AddressOf TreeViewCallbackHandler, levelSpec)
+		  //TreeViewControl.SetLevelSpec(levelSpec)
+		  //TreeViewControl.SetTree(theTree)
+		  
+		  TreeViewControl.BeginUse(theTree, levelSpec)
 		  
 		End Sub
 	#tag EndEvent
-
-
-	#tag Method, Flags = &h21
-		Private Sub TreeViewCallbackHandler(EventName As String, node As Dictionary, nodeKey As String)
-		  
-		  Select Case EventName
-		  Case "NodeSelected"
-		    System.DebugLog("Selected: " + node.Lookup("Value","").StringValue)
-		  End Select
-		  
-		End Sub
-	#tag EndMethod
 
 
 	#tag Property, Flags = &h0
@@ -120,6 +95,14 @@ End
 
 #tag EndWindowCode
 
+#tag Events TreeViewControl
+	#tag Event
+		Sub SelectionChanged(node as dictionary, nodeKey as string)
+		  System.DebugLog("Selection Chagned window level key = " + nodeKey)
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
 #tag ViewBehavior
 	#tag ViewProperty
 		Name="Name"

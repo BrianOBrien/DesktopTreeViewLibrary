@@ -47,6 +47,8 @@ Inherits DesktopCanvas
 		  mScrollY = mScrollY - (deltaY * (mRowH \ 2))
 		  ClampScroll
 		  Refresh
+		  
+		  Fire("ScrollChanged", Nil, mScrollY.ToString)
 		  Return True
 		End Function
 	#tag EndEvent
@@ -116,8 +118,8 @@ Inherits DesktopCanvas
 		    
 		    Var icon As Picture
 		    Var caption As String = typeName
-		    If LevelSpec <> Nil And LevelSpec.HasKey(typeName) Then
-		      Var info As Dictionary = Dictionary(LevelSpec.Value(typeName))
+		    If mLevelSpec <> Nil And mLevelSpec.HasKey(typeName) Then
+		      Var info As Dictionary = Dictionary(mLevelSpec.Value(typeName))
 		      icon = Picture(info.Lookup("Icon", Nil))
 		      caption = info.Lookup("Caption", typeName).StringValue
 		    End If
@@ -224,11 +226,12 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub BeginUse(theTree As Dictionary, cb As TreeViewCallback, levelSpec As Dictionary)
+		Sub BeginUse(theTree As Dictionary, levelSpec As Dictionary, host As ITreeHost)
 		  mRoot = theTree
-		  mCallback = cb
-		  Self.LevelSpec = levelSpec
-		  Update
+		  mLevelSpec = levelSpec
+		  mHost = host
+		  
+		  
 		End Sub
 	#tag EndMethod
 
@@ -358,7 +361,9 @@ Inherits DesktopCanvas
 
 	#tag Method, Flags = &h21
 		Private Sub Fire(EventName As String, node As Dictionary, nodeKey As String)
-		  If mCallback <> Nil Then mCallback.Invoke(EventName, node, nodeKey)
+		  If mHost <> Nil Then
+		    mHost.TreeViewCallback(EventName, node, nodeKey)
+		  End If
 		End Sub
 	#tag EndMethod
 
@@ -368,6 +373,27 @@ Inherits DesktopCanvas
 		  If mRoot = Nil Then Return
 		  AddNodeToRows(mRoot, 0, "root")
 		  mNeedsRebuild = False
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetLevelSpec(levelSpec as Dictionary)
+		  Self.mLevelSpec = levelSpec
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetScrollY(y As Integer)
+		  mScrollY = y
+		  ClampScroll
+		  Refresh
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetTree(theTree as Dictionary)
+		  mRoot = theTree
 		End Sub
 	#tag EndMethod
 
@@ -386,12 +412,8 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 
-	#tag Property, Flags = &h0
-		LevelSpec As Dictionary
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		mCallback As TreeViewCallback
+	#tag Property, Flags = &h21
+		Private mHost As ITreeHost
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -399,11 +421,15 @@ Inherits DesktopCanvas
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		mNeedsRebuild As Boolean = True
+		mLevelSpec As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		mRoot As Dictionary
+		mNeedsRebuild As Boolean = True
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mRoot As Dictionary
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

@@ -1,8 +1,10 @@
-#tag Module
-Protected Module XojoTreeViewDelegates
-	#tag DelegateDeclaration, Flags = &h0
-		Delegate Sub TreeViewCallback(EventName As String, node As Dictionary, nodeKey As String)
-	#tag EndDelegateDeclaration
+#tag Interface
+Interface ITreeHost
+	#tag Method, Flags = &h0
+		Sub TreeViewCallback(EventName As String, node As Dictionary, nodeKey As String)
+		  
+		End Sub
+	#tag EndMethod
 
 
 	#tag ViewBehavior
@@ -47,5 +49,5 @@ Protected Module XojoTreeViewDelegates
 			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
-End Module
-#tag EndModule
+End Interface
+#tag EndInterface
