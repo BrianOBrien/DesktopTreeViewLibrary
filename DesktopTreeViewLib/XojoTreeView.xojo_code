@@ -36,10 +36,20 @@ Inherits DesktopCanvas
 		  End If
 		  
 		  ' Selection
-		  If mRoot <> Nil Then ClearSelectionRecursive(mRoot)
-		  node.Value("_Selected") = True
-		  Refresh
-		  Fire("NodeSelected", node, nodeKey)
+		  If mRoot <> Nil Then
+		    If MultipleSelect = False Then
+		      ClearSelectionRecursive(mRoot)
+		      node.Value("_Selected") = True
+		    Else
+		      Var isSelected As Boolean = False
+		      If node.HasKey("_Selected") Then
+		        isSelected = node.Value("_Selected")
+		      End If
+		      node.Value("_Selected") = Not isSelected
+		    End If
+		    Refresh
+		    Fire("SelectionChanged", node, nodeKey)
+		  end if
 		  Return True
 		End Function
 	#tag EndEvent
@@ -65,11 +75,11 @@ Inherits DesktopCanvas
 		  #Pragma Unused areas
 		  If mNeedsRebuild Then RebuildRows
 		  
-		  ' Dark theme palette
-		  Var bg As Color = Color.RGB(30, 30, 34)
-		  Var rowAlt As Color = Color.RGB(34, 34, 40)
-		  Var textCol As Color = Color.RGB(230, 230, 235)
-		  Var guideCol As Color = Color.RGB(92, 92, 110) ' brighter dotted lines
+		  // Theme palette from public properties
+		  Var bg As Color = BackgroundColor
+		  Var rowAlt As Color = AlternateRowColor
+		  Var textCol As Color = TextColor
+		  Var guideCol As Color = GuideColor
 		  
 		  g.DrawingColor = bg
 		  g.FillRectangle(0, 0, Self.Width, Self.Height)
@@ -82,7 +92,7 @@ Inherits DesktopCanvas
 		  For i As Integer = firstRow To lastRow
 		    Var y As Integer = i * mRowH - mScrollY
 		    
-		    ' Alt row fill
+		    // Alt row fill
 		    If (i Mod 2) = 1 Then
 		      g.DrawingColor = rowAlt
 		      g.FillRectangle(0, y, Self.Width, mRowH)
@@ -93,26 +103,26 @@ Inherits DesktopCanvas
 		    
 		    Var isSelected As Boolean = node.Lookup("_Selected", False).BooleanValue
 		    If isSelected Then
-		      // Fill highlight (deep purple-ish, dark-mode friendly)
-		      g.DrawingColor = Color.RGB(60, 45, 85)
+		      // Fill highlight
+		      g.DrawingColor = SelectionFillColor
 		      g.FillRectangle(0, y, Self.Width, mRowH)
 		      
-		      // Optional border to make it pop
-		      g.DrawingColor = Color.RGB(120, 80, 200)
+		      // Border
+		      g.DrawingColor = SelectionBorderColor
 		      g.DrawRectangle(0, y, Self.Width, mRowH)
 		    End If
 		    
 		    
 		    Var depth As Integer = row.Value("Depth").IntegerValue
 		    
-		    ' Dotted guide columns (brighter)
+		    // Dotted guide columns
 		    For d As Integer = 0 To depth - 1
 		      Var gx As Integer = 10 + d * mIndent
 		      DrawDottedV(g, gx, y + 2, y + mRowH - 3, guideCol)
 		    Next
 		    
 		    
-		    ' Horizontal elbow from parent spine to this node
+		    // Horizontal elbow from parent spine to this node
 		    If depth > 0 Then
 		      Var spineX As Integer = 10 + (depth - 1) * mIndent
 		      Var nodeX As Integer = 10 + depth * mIndent
@@ -133,7 +143,7 @@ Inherits DesktopCanvas
 		    
 		    Var x As Integer = 10 + depth * mIndent
 		    
-		    ' Disclosure triangle if children exist
+		    // Disclosure triangle if children exist
 		    Var kids As Dictionary = ChildDict(node)
 		    Var hasKids As Boolean = (kids <> Nil And kids.KeyCount > 0)
 		    If hasKids Then
@@ -142,7 +152,7 @@ Inherits DesktopCanvas
 		    End If
 		    x = x + mTriangleSize + 6
 		    
-		    ' Icon + text
+		    // Icon + text
 		    If icon <> Nil Then
 		      g.DrawPicture(icon, x, y + (mRowH - icon.Height) \ 2)
 		      x = x + icon.Width + 6
@@ -153,8 +163,8 @@ Inherits DesktopCanvas
 		      g.DrawText(caption + " " + valueText, x, y + mRowH - 6)
 		    End If
 		    
-		    ' Right-justified attribute indicator (optional)
-		    ' NEW: flag is presence of "_Attribute", not alpha
+		    // Right-justified attribute indicator (optional)
+		    // flag is presence of "_Attribute", not alpha
 		    If node <> Nil And node.HasKey("_Attribute") Then
 		      Var ac As Color = AttributeColor(node)
 		      Var sr As Integer = 6
@@ -417,6 +427,18 @@ Inherits DesktopCanvas
 	#tag EndMethod
 
 
+	#tag Property, Flags = &h0
+		AlternateRowColor As Color = &c222228
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		BackgroundColor As Color = &c1E1E22
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		GuideColor As Color = &c5C5C6E
+	#tag EndProperty
+
 	#tag Property, Flags = &h21
 		Private mHost As ITreeHost
 	#tag EndProperty
@@ -451,6 +473,22 @@ Inherits DesktopCanvas
 
 	#tag Property, Flags = &h21
 		Private mTriangleSize As Integer = 10
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		MultipleSelect As Boolean = True
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		SelectionBorderColor As Color = &c7850C8
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		SelectionFillColor As Color = &c3C2D55
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		TextColor As Color = &cE6E6EB
 	#tag EndProperty
 
 
@@ -552,14 +590,6 @@ Inherits DesktopCanvas
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="TabPanelIndex"
-			Visible=false
-			Group="Position"
-			InitialValue="0"
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
 			Name="TabStop"
 			Visible=true
 			Group="Position"
@@ -637,6 +667,70 @@ Inherits DesktopCanvas
 			Group="Behavior"
 			InitialValue="False"
 			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BackgroundColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&c1E1E22"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="AlternateRowColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&c222228"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="TextColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&cE6E6EB"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="GuideColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&c5C5C6E"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="SelectionFillColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&c3C2D55"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="SelectionBorderColor"
+			Visible=true
+			Group="Behavior"
+			InitialValue="&c7850C8"
+			Type="Color"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="MultipleSelect"
+			Visible=true
+			Group="Behavior"
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="TabPanelIndex"
+			Visible=false
+			Group="Position"
+			InitialValue="0"
+			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
